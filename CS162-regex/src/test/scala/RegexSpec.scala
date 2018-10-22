@@ -72,12 +72,12 @@ class RegexSpec extends FlatSpec with Matchers {
     (r & r) should equal(r)
   }
 
-  it should "be buildable using `+`" in { pending }
-
-  it should "be buildable using `?`" in { pending }
-
   it should "be buildable using `^`" in {
     (r^5) should equal(r ~ r ~ r ~ r ~ r)
+  }
+
+  it should "r^0 should be the empty string" in {
+    (r^0) should equal(ε)
   }
 
   it should "be buildable using `>=`" in {
@@ -149,11 +149,70 @@ class RegexSpec extends FlatSpec with Matchers {
 
   behavior of "nullable"
 
-  it should "recognize a nullable regex 1" in { pending }
 
-  // more tests...
+  val nullable_r1 = ε
+  val nullable_r2 = Chars('b', 'c').*
+  val nullable_r3 = ∅ | Chars('b', 'c').*
+  val nullable_r4 = r <> (0, 3)
+  val nullable_r5 = r <= 10
+  val nullable_r6 = r^0
 
-  it should "recognize a non-nullable regex 1" in { pending }
+  it should "recognize a nullable regex 1" in {
+    nullable_r1.nullable should equal(ε)
+  }
 
-  // more tests...
+  it should "recognize a nullable regex 2" in {
+    nullable_r2.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 3" in {
+    nullable_r3.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 4" in {
+    nullable_r4.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 5" in {
+    nullable_r5.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 6" in {
+    nullable_r6.nullable should equal(ε)
+  }
+
+  val non_nullable_r1 = ∅
+  val non_nullable_r2 = Chars('b', 'c').+
+  val non_nullable_r3 = ∅ & Chars('b', 'c').*
+  val non_nullable_r4 = Chars('b')
+  val non_nullable_r5 = r^5
+  val non_nullable_r6 = r <> (1, 3)
+  val non_nullable_r7 = r >= 4
+
+  it should "recognize a non-nullable regex 1" in {
+    non_nullable_r1.nullable should equal(∅)
+  }
+  it should "recognize a non-nullable regex 2" in {
+    non_nullable_r2.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 3" in {
+    non_nullable_r3.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 4" in {
+    non_nullable_r4.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 5" in {
+    non_nullable_r5.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 6" in {
+    non_nullable_r6.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 7" in {
+    non_nullable_r7.nullable should equal(∅)
+  }
 }
