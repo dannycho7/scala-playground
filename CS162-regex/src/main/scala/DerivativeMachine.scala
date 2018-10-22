@@ -76,11 +76,11 @@ class DerivativeMachine(re: Regex) {
       case PushDerive => operands.head match {
         case `∅` | `ε` => run(Seq(∅) ++ operands.tail, program.tail, char)
         case Chars(chars) => run((if (chars.contains(char)) Seq(ε) else Seq(∅)) ++ operands.tail, program.tail, char)
-        case Concatenate(re1, re2) => run(operands.tail, Seq(PushRe(re1), PushDerive, PushRe(re2), PushConcatenate, PushRe(re1), PushNullable, PushRe(re2), PushDerive, PushConcatenate, PushUnion) ++ program.tail, char)
-        case Union(re1, re2) => run(operands.tail, Seq(PushRe(re1), PushDerive, PushRe(re2), PushDerive, PushUnion) ++ program.tail, char)
-        case rek @ KleeneStar(re1) => run(operands.tail, Seq(PushRe(re1), PushDerive, PushRe(rek), PushConcatenate) ++ program.tail, char)
+        case Concatenate(re1, re2) => run(operands.tail, Seq(PushRe(re2), PushDerive, PushRe(re1), PushNullable, PushConcatenate, PushRe(re2), PushRe(re1), PushDerive, PushConcatenate, PushUnion) ++ program.tail, char)
+        case Union(re1, re2) => run(operands.tail, Seq(PushRe(re2), PushDerive, PushRe(re1), PushDerive, PushUnion) ++ program.tail, char)
+        case rek @ KleeneStar(re1) => run(operands.tail, Seq(PushRe(rek), PushRe(re1), PushDerive, PushConcatenate) ++ program.tail, char)
         case Complement(re1) => run(operands.tail, Seq(PushRe(re1), PushDerive, PushComplement) ++ program.tail, char)
-        case Intersect(re1, re2) => run(operands.tail, Seq(PushRe(re1), PushDerive, PushRe(re2), PushDerive, PushIntersect) ++ program.tail, char)
+        case Intersect(re1, re2) => run(operands.tail, Seq(PushRe(re2), PushDerive, PushRe(re1), PushDerive, PushIntersect) ++ program.tail, char)
       }
       case PushConcatenate => run(Seq(operands(0) ~ operands(1)) ++ operands.drop(2), program.tail, char)
       case PushUnion => run(Seq(operands(0) | operands(1)) ++ operands.drop(2), program.tail, char)

@@ -156,6 +156,7 @@ class RegexSpec extends FlatSpec with Matchers {
   val nullable_r4 = r <> (0, 3)
   val nullable_r5 = r <= 10
   val nullable_r6 = r^0
+  val nullable_r7 = !Chars('b')
 
   it should "recognize a nullable regex 1" in {
     nullable_r1.nullable should equal(ε)
@@ -179,6 +180,10 @@ class RegexSpec extends FlatSpec with Matchers {
 
   it should "recognize a nullable regex 6" in {
     nullable_r6.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 7" in {
+    nullable_r7.nullable should equal(ε)
   }
 
   val non_nullable_r1 = ∅
