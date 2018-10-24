@@ -14,30 +14,26 @@ object `package` {
 
     // Concatenate 're' with 'other', simplifying if possible (assumes that 're'
     // and 'other' have already been simplified).
-    def ~(other: Regex): Regex = re match {
-      case `∅` => ∅
-      case `ε` => other
-      case _ => other match {
-        case `∅` => ∅
-        case `ε` => re
-        case _ => Concatenate(re, other)
-      }
+    def ~(other: Regex): Regex = (re, other) match {
+      case (`∅`, _) => ∅
+      case (_, `∅`) => ∅
+      case (`ε`, _) => other
+      case (_, `ε`) => re
+      case _ => Concatenate(re, other)
     }
 
     // Union 're' with 'other', simplifying if possible (assumes that 're' and
     // 'other' have already been simplified).
-    def |(other: Regex): Regex = re match {
-      case `∅` => other
-      case Chars(x) if (other.isInstanceOf[Chars]) => Chars(x ++ other.asInstanceOf[Chars].chars)
-      case _:KleeneStar if (other == `ε`) => re
-      case `ε` if (other.isInstanceOf[KleeneStar]) => other
-      case KleeneStar(`α`) => re
-      case _ => other match {
-        case `∅` => re
-        case KleeneStar(`α`) => other
-        case `re` => re
-        case _ => Union(re, other)
-      }
+    def |(other: Regex): Regex = (re, other) match {
+      case (`∅`, _) => other
+      case (_, `∅`) => re
+      case (Chars(x), Chars(y)) => Chars(x ++ y)
+      case (_:KleeneStar, `ε`) => re
+      case (`ε`, _:KleeneStar) => other
+      case (KleeneStar(`α`), _) => re
+      case (_, KleeneStar(`α`)) => other
+      case (_, `re`) => re
+      case _ => Union(re, other)
     }
 
     // Apply the Kleene star to 're', simplifying if possible (assumes that 're'
@@ -45,7 +41,7 @@ object `package` {
     def * : Regex = re match {
       case `∅` => ε
       case `ε` => ε
-      case KleeneStar(x) => re
+      case _:KleeneStar => re
       case _ => KleeneStar(re)
     }
 
@@ -60,16 +56,14 @@ object `package` {
 
     // Intersect 're' with 'other', simplifying if possible (assumes that 're'
     // and 'other' have already been simplified).
-    def &(other: Regex): Regex = re match {
-      case `∅` => ∅
-      case Chars(x) if (other.isInstanceOf[Chars]) => Chars(x & other.asInstanceOf[Chars].chars)
-      case KleeneStar(`α`) => other
-      case _ => other match {
-        case `∅` => ∅
-        case `re` => re
-        case KleeneStar(`α`) => re
-        case _ => Intersect(re, other)
-      }
+    def &(other: Regex): Regex = (re, other) match {
+      case (`∅`, _) => ∅
+      case (_, `∅`) => ∅
+      case (Chars(x), Chars(y)) => Chars(x & y)
+      case (KleeneStar(`α`), _) => other
+      case (_, KleeneStar(`α`)) => re
+      case (_, `re`) => re
+      case _ => Intersect(re, other)
     }
 
     // Shorthand for 1 or more repetitions of re regex.

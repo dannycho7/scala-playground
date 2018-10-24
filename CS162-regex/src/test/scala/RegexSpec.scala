@@ -149,7 +149,6 @@ class RegexSpec extends FlatSpec with Matchers {
 
   behavior of "nullable"
 
-
   val nullable_r1 = ε
   val nullable_r2 = Chars('b', 'c').*
   val nullable_r3 = ∅ | Chars('b', 'c').*
