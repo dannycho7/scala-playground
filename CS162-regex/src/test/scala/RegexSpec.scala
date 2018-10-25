@@ -76,7 +76,11 @@ class RegexSpec extends FlatSpec with Matchers {
     (r^5) should equal(r ~ r ~ r ~ r ~ r)
   }
 
-  it should "r^0 should be the empty string" in {
+  it should "should not allow negative numbers for `^`" in {
+    an [AssertionError] should be thrownBy (r^(-5))
+  }
+
+  it should "should be the empty string for r^0" in {
     (r^0) should equal(ε)
   }
 
@@ -84,14 +88,27 @@ class RegexSpec extends FlatSpec with Matchers {
     (r >= 3) should equal(r ~ r ~ r ~ r.*)
   }
 
+  it should "should not allow negative numbers for `>=`" in {
+    an [AssertionError] should be thrownBy (r >= -5)
+  }
+
   it should "be buildable using `<=`" in {
     (r <= 3) should equal(ε | r | (r ~ r) | (r ~ r ~ r))
+  }
+
+  it should "should not allow negative numbers for `<=`" in {
+    an [AssertionError] should be thrownBy (r <= -5)
   }
 
   it should "be buildable using `<=>`" in {
     (r <>(2, 3)) should equal((r ~ r ~ r.*) & (ε | r | (r ~ r) | (r ~ r ~ r)))
   }
 
+  it should "should not allow negative numbers for `<=>`" in {
+    an [AssertionError] should be thrownBy (r <> (-5, -2))
+    an [AssertionError] should be thrownBy (r <> (-5, 2))
+    an [AssertionError] should be thrownBy (r <> (5, -2))
+  }
 
   it should "be buildable using convenience methods 1" in {
     (b ~ c) should equal (Concatenate(b, c))

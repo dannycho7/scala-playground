@@ -74,16 +74,29 @@ object `package` {
 
     // Shorthand for exactly 'num' repetitions of re regex.
     // Check if num > 0 ?
-    def ^(num: Int): Regex = if (num > 1) Concatenate(re ^ (num - 1), re) else if (num == 1) re else `ε`
+    def ^(num: Int): Regex = {
+      assert(num >= 0, "num must be >= 0.")
+      if (num > 1) Concatenate(re ^ (num - 1), re) else if (num == 1) re else `ε`
+    }
 
     // Shorthand for at least 'min' repetitions of re regex.
-    def >=(min: Int): Regex = Concatenate(re ^ min, KleeneStar(re))
+    def >=(min: Int): Regex = {
+      assert(min >= 0, "min must be >= 0")     
+      Concatenate(re ^ min, KleeneStar(re))
+    }
 
     // Shorthand for at most 'max' repetitions of re regex.
-    def <=(max: Int): Regex = if (max > 0) Union(re <= (max - 1), re ^ max) else `ε`
+    def <=(max: Int): Regex = {
+      assert(max >= 0, "min must be >= 0")     
+      if (max > 0) Union(re <= (max - 1), re ^ max) else `ε`
+    }
 
     // Shorthand for at least 'min' but at most 'max' repetitions of re regex.
-    def <>(min: Int, max: Int): Regex = Intersect(re >= min, re <= max)
+    def <>(min: Int, max: Int): Regex = {
+      assert(min >= 0, "min must be >= 0")
+      assert(max >= 0, "max must be >= 0")
+      Intersect(re >= min, re <= max)
+    }
   }
 
   // Add convenient methods to String for building simple regular expressions.
