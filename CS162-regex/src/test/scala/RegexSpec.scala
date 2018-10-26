@@ -108,6 +108,7 @@ class RegexSpec extends FlatSpec with Matchers {
     an [AssertionError] should be thrownBy (r <> (-5, -2))
     an [AssertionError] should be thrownBy (r <> (-5, 2))
     an [AssertionError] should be thrownBy (r <> (5, -2))
+    an [AssertionError] should be thrownBy (r <> (5, 2))
   }
 
   it should "be buildable using convenience methods 1" in {

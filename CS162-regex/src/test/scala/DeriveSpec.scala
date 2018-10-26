@@ -24,6 +24,8 @@ class DeriveSpec extends FlatSpec with Matchers {
   val r10 = d <= 5
   val r11 = r1.?
   val r12 = (c | d).*
+  val r13 = Chars('b' -> 'g')
+  val r14 = !r13
 
   import Regex._
 
@@ -96,6 +98,16 @@ class DeriveSpec extends FlatSpec with Matchers {
     Derive.matches(r12, "cddc") should equal(true)
   }
 
+  it should "recognize strings in the language 13" in {
+    Derive.matches(r13, "d") should equal(true)
+    Derive.matches(r13, "g") should equal(true)
+  }
+
+  it should "recognize strings in the language 14" in {
+    Derive.matches(r14, "a") should equal(true)
+    Derive.matches(r14, "asdasd") should equal(true)
+  }
+
   it should "not recognize strings not in the language 1" in {
     Derive.matches(r1, "") should equal(false)
     Derive.matches(r1, "ab") should equal(false)
@@ -154,6 +166,16 @@ class DeriveSpec extends FlatSpec with Matchers {
 
   it should "not recognize strings in the language 12" in {
     Derive.matches(r12, "aj") should equal(false)
+  }
+
+  it should "not recognize strings in the language 13" in {
+    Derive.matches(r13, "a") should equal(false)
+    Derive.matches(r13, "bg") should equal(false)
+  }
+
+  it should "not recognize strings in the language 14" in {
+    Derive.matches(r14, "c") should equal(false)
+    Derive.matches(r14, "b") should equal(false)
   }
 
   behavior of "matches"
@@ -222,6 +244,16 @@ class DeriveSpec extends FlatSpec with Matchers {
     (new DerivativeMachine(r12)).eval("cddc") should equal(true)
   }
 
+  it should "recognize strings in the language 13" in {
+    (new DerivativeMachine(r13)).eval("d") should equal(true)
+    (new DerivativeMachine(r13)).eval("g") should equal(true)
+  }
+
+  it should "recognize strings in the language 14" in {
+    (new DerivativeMachine(r14)).eval("a") should equal(true)
+    (new DerivativeMachine(r14)).eval("asdasd") should equal(true)
+  }
+
   it should "not recognize strings not in the language 1" in {
     (new DerivativeMachine(r1)).eval("") should equal(false)
     (new DerivativeMachine(r1)).eval("ab") should equal(false)
@@ -280,5 +312,43 @@ class DeriveSpec extends FlatSpec with Matchers {
 
   it should "not recognize strings in the language 12" in {
     (new DerivativeMachine(r12)).eval("aj") should equal(false)
+  }
+
+  it should "not recognize strings in the language 13" in {
+    (new DerivativeMachine(r13)).eval("a") should equal(false)
+    (new DerivativeMachine(r13)).eval("bg") should equal(false)
+  }
+
+  it should "not recognize strings in the language 14" in {
+    (new DerivativeMachine(r14)).eval("c") should equal(false)
+    (new DerivativeMachine(r14)).eval("b") should equal(false)
+  }
+
+  val d_r1 = Chars('g' -> 'q')
+  val d_r2 = Chars('a') | Chars('b')
+  val d_r3 = Chars('a').*
+  val d_r4 = d_r3 ~ d_r2
+
+  behavior of "DerivativeMachine derives"
+
+  it should "produce the correct derivation for d_r1" in {
+    (new DerivativeMachine(d_r1)).derive('g') should equal(ε)
+    (new DerivativeMachine(d_r1)).derive('a') should equal(∅)
+  }
+
+  it should "produce the correct derivation for d_r2" in {
+    (new DerivativeMachine(d_r2)).derive('a') should equal(ε)
+    (new DerivativeMachine(d_r2)).derive('b') should equal(ε)
+    (new DerivativeMachine(d_r2)).derive('c') should equal(∅)
+  }
+
+  it should "produce the correct derivation for d_r3" in {
+    (new DerivativeMachine(d_r3)).derive('a') should equal(Chars('a').*)
+    (new DerivativeMachine(d_r3)).derive('b') should equal(∅)
+  }
+
+  it should "produce the correct derivation for d_r4" in {
+    (new DerivativeMachine(d_r4)).derive('h') should equal(∅)
+    (new DerivativeMachine(d_r4)).derive('a') should equal((Chars('a').* ~ (Chars('a') | Chars('b'))) | ε)
   }
 }

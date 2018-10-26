@@ -95,6 +95,7 @@ object `package` {
     def <>(min: Int, max: Int): Regex = {
       assert(min >= 0, "min must be >= 0")
       assert(max >= 0, "max must be >= 0")
+      assert(min <= max, "min must be <= max")
       Intersect(re >= min, re <= max)
     }
   }
