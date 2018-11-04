@@ -26,7 +26,7 @@ object `package` {
 
 // Instructions for the virtual machine.
 //
-// - Derive: pop the top of the operand stack, compute its derivative w.r.t. the
+// - PushDerive: pop the top of the operand stack, compute its derivative w.r.t. the
 //   machine's given char, then push the result back on the operand stack.
 // - PushConcatentate: pop the top two elements of the operand stack and push
 //   their concatenation back on.
@@ -56,22 +56,38 @@ class DerivativeMachine(re: Regex) {
   //----------------------------------------------------------------------------
 
   // Returns true iff 'str' is recognized by 're'.
-  def eval(str: String): Boolean = ???
-
+  def eval(str: String): Boolean = if (str.length > 0) (new DerivativeMachine(derive(str(0)))).eval(str.tail) else re.nullable == ε
+  
   // Returns the derivative of 're' w.r.t. 'char'.
-  def derive(char: Char): Regex = ???
+  def derive(char: Char): Regex = run(Seq(re), Seq(PushDerive), char)
 
   //----------------------------------------------------------------------------
   // Private details.
   //----------------------------------------------------------------------------
 
   // Derives a regular expression from the top of 'operands' w.r.t. 'char'.
-  // @annotation.tailrec
+  @annotation.tailrec
   private def run(operands: Seq[Regex], program: Program, char: Char): Regex = {
     if (program.isEmpty) {
       assert(operands.size == 1)
       operands.head
     }
-    else ???
+    else program.head match {
+      case PushDerive => operands.head match {
+        case `∅` | `ε` => run(Seq(∅) ++ operands.tail, program.tail, char)
+        case Chars(chars) => run((if (chars.contains(char)) Seq(ε) else Seq(∅)) ++ operands.tail, program.tail, char)
+        case Concatenate(re1, re2) => run(operands.tail, Seq(PushRe(re2), PushDerive, PushRe(re1), PushNullable, PushConcatenate, PushRe(re2), PushRe(re1), PushDerive, PushConcatenate, PushUnion) ++ program.tail, char)
+        case Union(re1, re2) => run(operands.tail, Seq(PushRe(re2), PushDerive, PushRe(re1), PushDerive, PushUnion) ++ program.tail, char)
+        case rek @ KleeneStar(re1) => run(operands.tail, Seq(PushRe(rek), PushRe(re1), PushDerive, PushConcatenate) ++ program.tail, char)
+        case Complement(re1) => run(operands.tail, Seq(PushRe(re1), PushDerive, PushComplement) ++ program.tail, char)
+        case Intersect(re1, re2) => run(operands.tail, Seq(PushRe(re2), PushDerive, PushRe(re1), PushDerive, PushIntersect) ++ program.tail, char)
+      }
+      case PushConcatenate => run(Seq(operands(0) ~ operands(1)) ++ operands.drop(2), program.tail, char)
+      case PushUnion => run(Seq(operands(0) | operands(1)) ++ operands.drop(2), program.tail, char)
+      case PushComplement => run(Seq(!operands(0)) ++ operands.tail, program.tail, char)
+      case PushIntersect => run(Seq(operands(0) & operands(1)) ++ operands.drop(2), program.tail, char)
+      case PushNullable => run(Seq(operands(0).nullable) ++ operands.tail, program.tail, char)
+      case PushRe(re: Regex) => run(Seq(re) ++ operands, program.tail, char)
+    }
   }
 }
