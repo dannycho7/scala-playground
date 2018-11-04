@@ -62,7 +62,14 @@ class DerivativeAnalysisSpec extends FlatSpec with Matchers with Timeout {
     val dfa = analyzeWithTimeout(Union(ε, Chars('a')).*)
   }
 
-  // more tests...
+  it should "should always terminate 3" in {
+    // This test should test that check if normalization and DFA
+    // building work well together. If the regexes are not conflated
+    // properly, DFA construction would cause a timeout or stack
+    // overflow and this test should fail.
+
+    val dfa = analyzeWithTimeout((Chars('a')^2 | Chars('b')^2 | Chars('c')^2).*)
+  }
 
   it should "produce a DFA that recognizes the strings in language 0" in {
     val dfa = analyzeWithTimeout(r0)
@@ -290,11 +297,27 @@ class DerivativeAnalysisSpec extends FlatSpec with Matchers with Timeout {
         a ~ b -> Seq((aSet, b), (!aSet, Regex.∅)),
         b -> Seq((bSet, ε), (!bSet, ∅)),
         ε -> Seq((Σ, ∅)),
-        ∅ -> Seq((Σ, ∅))),
+        ∅ -> Seq((Σ, ∅))
+      ),
       a ~ b,
       Set[Regex](ε)
     )
   }
 
-  // more tests...
+  it should "produce a DFA that has the correct structure 2" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val Σ = α.chars
+    val aSet = CharSet('a')
+    val bSet = CharSet('b')
+
+    DerivativeAnalysis.analyze((a | b).*) shouldEqual Dfa(
+      Map(
+        (a | b).* -> Seq((CharSet('a', 'b'), (a | b).*), (!CharSet('a', 'b'), ∅)),
+        ∅ -> Seq((Σ, ∅))
+      ),
+      (a | b).*,
+      Set[Regex]((a | b).*)
+    )
+  }
 }
