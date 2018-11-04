@@ -38,14 +38,14 @@ object DerivativeAnalysis {
       val(destination_states, todo_transition) = computeNext(todo.head)
       val visited = visitedStates ++ Set(todo.head)
       val added_todos = destination_states -- visited 
-      computeDfa(todo.tail ++ added_todos, visited, transitions ++ todo_transition)
+      computeDfa(added_todos ++ todo.tail, visited, transitions ++ todo_transition)
     }
   }
   
-  def pairwiseIntersect(re1: Set[CharSet], re2: Set[CharSet]): Set[CharSet] = re1.flatMap(x => re2.map(y => x & y)).filter(!_.isEmpty)
+  def pairwiseIntersect(re1: Set[CharSet], re2: Set[CharSet]): Set[CharSet] = re1.flatMap(x => re2.map(y => x & y))
 
   // Computes the over-approximate partitions of a given regex
-  def C(re: Regex): Set[CharSet] = re match {
+  def C(re: Regex): Set[CharSet] = (re match {
     case `∅` => Set(α.chars)
     case `ε` => Set(α.chars)
     case Chars(chars) => Set(chars, !chars)
@@ -55,7 +55,7 @@ object DerivativeAnalysis {
     case Intersect(x, y) => pairwiseIntersect(C(x), C(y))
     case Concatenate(x, y) => if (x.nullable == ∅) C(x) else pairwiseIntersect(C(x), C(y))
     case _ => Set(α.chars)
-  }
+  }).filter(!_.isEmpty)
 
   // Compute the transitions and destination states from the given regex.
   def computeNext(state: Regex): (Set[Regex], Transitions[Regex]) = {

@@ -19,6 +19,11 @@ class RegexSpec extends FlatSpec with Matchers {
   val r = Chars('a') | Chars('b').+
   val r1 = Chars('x', 'y').* ~ r
   val r2 = Chars('y', 'x').+ ~ r
+  val r3 = b | c | d
+  val r4 = b.+ | d.+ | f.+
+  val r5 = b.+ & c.+ & d.+
+  val r6 = (b.+ & c.+) & (d.+ & e.+)
+
   //----------------------------------------------------------------------------
   // Tests.
   // ---------------------------------------------------------------------------
@@ -34,6 +39,10 @@ class RegexSpec extends FlatSpec with Matchers {
     (ε ~ r) should equal(r)
   }
 
+  it should "be right associative when building using `~`" in {
+    r2 should equal (Concatenate(Chars('y', 'x'), Concatenate(Chars('y', 'x').*, r)))
+    (Concatenate(b, c) ~ r2) should equal (Concatenate(b, Concatenate(c, r2)))
+  }
 
   it should "be buildable using `|`" in {
     (r1 | r2) should equal(Union(r2, r1)) // also testing normalization due to lengths of r1 and r2
@@ -46,6 +55,11 @@ class RegexSpec extends FlatSpec with Matchers {
     (α.* |   r) should equal(α.*)
     (r |   α.*) should equal(α.*)
     (r | r)     should equal(r)
+  }
+
+  it should "be right associative when building using `|`" in {
+    r3 should equal(Chars('b' -> 'd'))
+    r4 should equal(Union(b.+, Union(d.+, f.+)))
   }
 
   it should "be buildable using `*`" in {
@@ -75,22 +89,45 @@ class RegexSpec extends FlatSpec with Matchers {
     (r & r) should equal(r)
   }
 
+  it should "be right associative when building using `&`" in {
+    r5 should equal(Intersect(b.+, Intersect(c.+, d.+)))
+    r6 should equal(Intersect(b.+, Intersect(c.+, Intersect(d.+, e.+))))
+  }
+
   it should "be buildable using `^`" in {
     (r^5) should equal(r ~ r ~ r ~ r ~ r)
   }
 
+  it should "should be the empty string for r^0" in {
+    (r^0) should equal(ε)
+  }
+
   it should "be buildable using `>=`" in {
     (r >= 3) should equal(r ~ r ~ r ~ r.*)
+  }
+  
+  it should "should not allow negative numbers for `>=`" in {
+    an [AssertionError] should be thrownBy (r >= -5)
   }
 
   it should "be buildable using `<=`" in {
     (r <= 3) should equal(ε | r | (r ~ r) | (r ~ r ~ r))
   }
 
+  it should "should not allow negative numbers for `<=`" in {
+    an [AssertionError] should be thrownBy (r <= -5)
+  }
+
   it should "be buildable using `<>`" in {
     (r <>(2, 3)) should equal((r ~ r ~ r.*) & (ε | r | (r ~ r) | (r ~ r ~ r)))
   }
 
+  it should "should not allow negative numbers for `<>`" in {
+    an [AssertionError] should be thrownBy (r <> (-5, -2))
+    an [AssertionError] should be thrownBy (r <> (-5, 2))
+    an [AssertionError] should be thrownBy (r <> (5, -2))
+    an [AssertionError] should be thrownBy (r <> (5, 2))
+  }
 
   it should "be buildable using convenience methods 1" in {
     (b ~ c) should equal (Concatenate(b, c))
@@ -175,11 +212,104 @@ class RegexSpec extends FlatSpec with Matchers {
 
   behavior of "nullable"
 
-  it should "recognize a nullable regex 1" in { pending }
+  val nullable_r1 = ε
+  val nullable_r2 = Chars('b', 'c').*
+  val nullable_r3 = ∅ | nullable_r2
+  val nullable_r4 = r <> (0, 3)
+  val nullable_r5 = r <= 10
+  val nullable_r6 = r^0
+  val nullable_r7 = !Chars('b')
+  val nullable_r8 = ε ~ nullable_r7
+  val nullable_r9 = ε & nullable_r7
+  val nullable_r10 = Chars('b', 'c', 'd').?
 
-  // more tests...
+  it should "recognize a nullable regex 1" in {
+    nullable_r1.nullable should equal(ε)
+  }
 
-  it should "recognize a non-nullable regex 1" in { pending }
+  it should "recognize a nullable regex 2" in {
+    nullable_r2.nullable should equal(ε)
+  }
 
-  // more tests...
+  it should "recognize a nullable regex 3" in {
+    nullable_r3.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 4" in {
+    nullable_r4.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 5" in {
+    nullable_r5.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 6" in {
+    nullable_r6.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 7" in {
+    nullable_r7.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 8" in {
+    nullable_r8.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 9" in {
+    nullable_r9.nullable should equal(ε)
+  }
+
+  it should "recognize a nullable regex 10" in {
+    nullable_r10.nullable should equal(ε)
+  }
+
+  val non_nullable_r1 = ∅
+  val non_nullable_r2 = Chars('b', 'c').+
+  val non_nullable_r3 = ∅ & Chars('b', 'c').*
+  val non_nullable_r4 = Chars('b')
+  val non_nullable_r5 = r^5
+  val non_nullable_r6 = r <> (1, 3)
+  val non_nullable_r7 = r >= 4
+  val non_nullable_r8 = !ε
+  val non_nullable_r9 = !ε ~ nullable_r1
+  val non_nullable_r10 = !ε | non_nullable_r9
+
+  it should "recognize a non-nullable regex 1" in {
+    non_nullable_r1.nullable should equal(∅)
+  }
+  it should "recognize a non-nullable regex 2" in {
+    non_nullable_r2.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 3" in {
+    non_nullable_r3.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 4" in {
+    non_nullable_r4.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 5" in {
+    non_nullable_r5.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 6" in {
+    non_nullable_r6.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 7" in {
+    non_nullable_r7.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 8" in {
+    non_nullable_r8.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 9" in {
+    non_nullable_r9.nullable should equal(∅)
+  }
+
+  it should "recognize a non-nullable regex 10" in {
+    non_nullable_r10.nullable should equal(∅)
+  }
 }
