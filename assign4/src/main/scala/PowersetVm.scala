@@ -58,7 +58,7 @@ class PowersetVm(program: Program) extends VirtualMachine(program) {
           val rest = parse.tail.tail
           runUntilMatchOrAccept(Thread(pc + 1, progress, priority, ConcatNode(left, right) +: rest), todo, result)
         }
-        case `InitStar` => runUntilMatchOrAccept(Thread(pc + 1, progress, priority, StarNode(Seq(EmptyLeaf)) +: parse), todo, result)
+        case `InitStar` => runUntilMatchOrAccept(Thread(pc + 1, progress, priority, StarNode(Seq()) +: parse), todo, result)
         case `PushStar` => {
           val body = parse.head
           val star = parse.tail.head
