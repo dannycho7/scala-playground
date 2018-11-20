@@ -21,9 +21,11 @@ class CompileSpec extends FlatSpec with Matchers {
 
   val c = Chars('c')
   val d = Chars('d')
+  val e = Chars('e')
 
   val cSet = CharSet('c')
   val dSet = CharSet('d')
+  val eSet = CharSet('e')
 
   it should "correctly compile the empty language" in {
     Compiler.compile(∅) shouldEqual IndexedSeq(Reject, Accept)
@@ -34,7 +36,14 @@ class CompileSpec extends FlatSpec with Matchers {
   }
 
   it should "correctly compile concatenation" in  {
-    Compiler.compile(Concatenate(c, d)) shouldEqual IndexedSeq(MatchSet(cSet), PushChar, MatchSet(dSet), PushChar, PushConcat, Accept)
+    Compiler.compile(Concatenate(c, d)) shouldEqual IndexedSeq(
+      MatchSet(cSet),
+      PushChar,
+      MatchSet(dSet),
+      PushChar,
+      PushConcat,
+      Accept
+    )
   }
 
   // More concatenation tests
@@ -96,9 +105,44 @@ class CompileSpec extends FlatSpec with Matchers {
 
   // more tests...
 
-  it should "correctly compile complex regexes 1" in { pending }
+  it should "correctly compile complex regexes 1" in {
+    Compiler.compile(Union(Concatenate(c, e), d)) shouldEqual IndexedSeq(
+      Fork(1, 8),
+      MatchSet(cSet),
+      PushChar,
+      MatchSet(eSet),
+      PushChar,
+      PushConcat,
+      PushLeft,
+      Jump(4),
+      MatchSet(dSet),
+      PushChar,
+      PushRight,
+      Accept
+    )
+  }
 
-  it should "correctly compile complex regexes 2" in { pending }
+  it should "correctly compile complex regexes 2" in {
+    Compiler.compile(Union(Concatenate(c, e), Capture("num_d", KleeneStar(d)))) shouldEqual IndexedSeq(
+      Fork(1, 8),
+      MatchSet(cSet),
+      PushChar,
+      MatchSet(eSet),
+      PushChar,
+      PushConcat,
+      PushLeft,
+      Jump(9),
+      InitStar,
+      Fork(1, 5),
+      MatchSet(dSet),
+      PushChar,
+      PushStar,
+      Jump(-4),
+      PushCapture("num_d"),
+      PushRight,
+      Accept
+    ) 
+  }
 
   // more tests...
 }
