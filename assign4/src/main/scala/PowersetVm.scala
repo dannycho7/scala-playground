@@ -92,8 +92,8 @@ class PowersetVm(program: Program) extends VirtualMachine(program) {
     }
 
     def run(sp: Int, threads: Set[Thread]): Option[ParseTree] = {
-      val pending_threads = compact(runUntilMatchOrAccept(threads.head, threads.tail, Set()))
       if (threads.isEmpty) return None
+      val pending_threads = compact(runUntilMatchOrAccept(threads.head, threads.tail, Set()))
       if (sp == str.length) {
         val accepted_threads = pending_threads.filter(t => program(t.pc) == `Accept`)
         if (accepted_threads.isEmpty) None else Some(accepted_threads.head.parse.head)
