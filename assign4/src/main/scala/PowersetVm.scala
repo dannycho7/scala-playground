@@ -33,9 +33,9 @@ class PowersetVm(program: Program) extends VirtualMachine(program) {
             runUntilMatchOrAccept(todo.head, todo.tail, next_result)
           }
         }
-        case `Reject` => runUntilMatchOrAccept(todo.head, todo.tail, result)
+        case `Reject` => if (todo.isEmpty) result else runUntilMatchOrAccept(todo.head, todo.tail, result)
         case `CheckProgress` => {
-          if (thread.progress.contains(pc)) runUntilMatchOrAccept(todo.head, todo.tail, result)
+          if (thread.progress.contains(pc)) if (todo.isEmpty) result else runUntilMatchOrAccept(todo.head, todo.tail, result)
           else runUntilMatchOrAccept(Thread(pc + 1, Set(pc) ++ progress, priority, parse), todo, result)
         }
         case Jump(offset) => {
