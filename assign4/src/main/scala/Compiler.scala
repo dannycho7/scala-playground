@@ -33,6 +33,6 @@ object Compiler {
   		val compiled = compileImmediate(re)
   		compiled ++ IndexedSeq(PushCapture(name))
   	}
-  	case _ => throw new Exception("Reached unexpected regex")
+  	case _ => assert(false, "Reached unexpected regex"); IndexedSeq()
   }
 }
