@@ -17,6 +17,10 @@ object `package` {
     // Concatenate 're' with 'other', simplifying if possible (assumes that 're'
     // and 'other' have already been simplified).
     def ~(other: Regex): Regex = (re, other) match {
+      case (`∅`, _) => ∅
+      case (_, `∅`) => ∅
+      case (`ε`, _) => other
+      case (_, `ε`) => re
       // This case should come after all other cases that handle concatenation
       // simplification. It handles the case where the concatenation is not
       // right-associative, and transforms it into right-associative form. There
@@ -31,11 +35,20 @@ object `package` {
         }
         replaceRight(re)
       }
+      case _ => Concatenate(re, other)
     }
 
     // Union 're' with 'other', simplifying if possible (assumes that 're' and
     // 'other' have already been simplified).
     def |(other: Regex): Regex = (re, other) match {
+      case (`∅`, _) => other
+      case (_, `∅`) => re
+      case (Chars(x), Chars(y)) => Chars(x ++ y)
+      case (_:KleeneStar, `ε`) => re
+      case (`ε`, _:KleeneStar) => other
+      case (KleeneStar(`α`), _) => re
+      case (_, KleeneStar(`α`)) => other
+      case (_, `re`) => re
       // This case should come after all other cases that handle union
       // simplification. It ensures that unions are right-associative and the
       // operands are ordered correctly.
@@ -52,15 +65,31 @@ object `package` {
 
     // Apply the Kleene star to 're', simplifying if possible (assumes that 're'
     // has already been simplified).
-    def * : Regex = ???
+    def * : Regex = re match {
+      case `∅` => ε
+      case `ε` => ε
+      case _:KleeneStar => re
+      case _ => KleeneStar(re)
+    }
 
     // Complement 're', simplifying if possible (assumes that 're' has already
     // been simplified).
-    def unary_! : Regex = ???
+    def unary_! : Regex = re match {
+      case `∅` => KleeneStar(`α`)
+      case `ε` => α.+
+      case Complement(x) => x // !!x
+      case _ => Complement(re)
+    }
 
     // Intersect 're' with 'other', simplifying if possible (assumes that 're'
     // and 'other' have already been simplified).
     def &(other: Regex): Regex = (re, other) match {
+      case (`∅`, _) => ∅
+      case (_, `∅`) => ∅
+      case (Chars(x), Chars(y)) => Chars(x & y)
+      case (KleeneStar(`α`), _) => other
+      case (_, KleeneStar(`α`)) => re
+      case (_, `re`) => re
       // This case should come after all other cases that handle intersection
       // simplification. It ensures that intersections are right-associative and
       // the operands are ordered correctly.
@@ -76,23 +105,38 @@ object `package` {
     }
 
     // Shorthand for 1 or more repetitions of re regex.
-    def + : Regex = ???
+    def + : Regex = re ~ re.*
 
     // Shorthand for 0 or 1 instances of re regex.
-    def ? : Regex = ???
+    def ? : Regex = `ε` | re
 
     // Shorthand for exactly 'num' repetitions of re regex.
-    def ^(num: Int): Regex = ???
+    // Check if num > 0 ?
+    def ^(num: Int): Regex = {
+      assert(num >= 0, "num must be >= 0.")
+      if (num > 1) (re ^ (num - 1)) ~ re else if (num == 1) re else `ε`
+    }
 
     // Shorthand for at least 'min' repetitions of re regex.
-    def >=(min: Int): Regex = ???
+    def >=(min: Int): Regex = {
+      assert(min >= 0, "min must be >= 0")     
+      (re ^ min) ~ re.*
+    }
 
     // Shorthand for at most 'max' repetitions of re regex.
-    def <=(max: Int): Regex = ???
+    def <=(max: Int): Regex = {
+      assert(max >= 0, "min must be >= 0")     
+      if (max > 0) (re <= (max - 1)) | re ^ max else `ε`
+    }
 
     // Shorthand for at least 'min' but at most 'max' repetitions of re regex.
-    def <>(min: Int, max: Int): Regex = ???
-
+    def <>(min: Int, max: Int): Regex = {
+      assert(min >= 0, "min must be >= 0")
+      assert(max >= 0, "max must be >= 0")
+      assert(min <= max, "min must be <= max")
+      (re >= min) & re <= max
+    }
+    
     // Place the regex inside a capture group with the given name.
     def capture(name: String): Regex =
       Capture(name, re)
