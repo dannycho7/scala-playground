@@ -3,6 +3,7 @@
 package edu.ucsb.cs.cs162.dfa
 
 import edu.ucsb.cs.cs162.range_set._
+import edu.ucsb.cs.cs162.regex._
 
 object `package` {
   type Transitions[State] = Map[State, Seq[(CharSet, State)]]
@@ -23,7 +24,18 @@ case class Dfa[State](delta: Transitions[State], init: State, fin: Set[State]) {
 
   // Returns a string that causes an arbitrary but non-looping path from the
   // init state to a final state, if such a path exists.
-  def getString: Option[String] = ???
+  def getString: Option[String] = {
+    def bfs(visited: Set[State], todo: Set[(String, State)]): Option[String] = {
+      if (todo.isEmpty) return None
+      val (prefix, state) = todo.head
+      if (visited.contains(state)) return bfs(visited, todo.tail)
+      if (fin.contains(state)) return Some(prefix)
+      val next_states = delta(state).map { case (charset, next_state) =>  (prefix + charset.minElement.get, next_state) }
+      bfs(visited ++ Set(state), todo.tail ++ next_states)
+    }
+
+    bfs(Set[State](), Set(("", init)))
+  }
 
   //----------------------------------------------------------------------------
   // Private details.
