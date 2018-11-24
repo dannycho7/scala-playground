@@ -136,7 +136,7 @@ object `package` {
       assert(min <= max, "min must be <= max")
       (re >= min) & re <= max
     }
-    
+
     // Place the regex inside a capture group with the given name.
     def capture(name: String): Regex =
       Capture(name, re)
@@ -287,6 +287,34 @@ object `package` {
     // returns the ambiguous sub-expression (the first one for which ambiguity
     // is detected, if there is more than one) and a string that exposes the
     // ambiguity of that sub-expression.
-    def unambiguous: Option[(Regex, String)] = ???
+    def unambiguous: Option[(Regex, String)] = re match {
+      case `∅` | `ε` | _: Chars => None
+      case Union(re1, re2) => {
+        val unambiguous_1 = re1.unambiguous
+        val unambiguous_2 = re2.unambiguous
+        val intersect_re = re1 & re2
+        if (unambiguous_1 != None) unambiguous_1
+        else if (unambiguous_2 != None) unambiguous_2
+        else if (intersect_re.empty) None
+        else Some((re, DerivativeAnalysis.analyze(intersect_re).getString.get))
+      }
+      case Concatenate(re1, re2) => {
+        val unambiguous_1 = re1.unambiguous
+        val unambiguous_2 = re2.unambiguous
+        val overlap_re = re1 overlap re2
+        if (unambiguous_1 != None) unambiguous_1
+        else if (unambiguous_2 != None) unambiguous_2
+        else if (overlap_re.empty) None
+        else Some((re, DerivativeAnalysis.analyze(overlap_re).getString.get))
+      }
+      case KleeneStar(r) => {
+        val unambiguous_r = r.unambiguous
+        val overlap_re = (r overlap re)
+        if (unambiguous_r != None) unambiguous_r
+        else if (r.nullable == ∅ && overlap_re.empty) None
+        else Some((re, DerivativeAnalysis.analyze(overlap_re).getString.get))
+      }
+      case _ => assert(false, "Cannot check unambiguous of non-constructive regex"); None
+    }
   }
 }
