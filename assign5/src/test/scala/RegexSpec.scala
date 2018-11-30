@@ -293,23 +293,144 @@ class RegexSpec extends FlatSpec with Matchers with OptionValues {
 
   behavior of "ambiguity type checker"
 
-  it should "find the ambiguous subexpression and a witness string in an ambiguous regex" in {
+  it should "not allow unambiguous to be called on non-constructive regexes" in {
+    val a = Chars('a')
+    val b = Chars('b')
+
+    an [AssertionError] should be thrownBy (Complement(b)).unambiguous
+    an [AssertionError] should be thrownBy (Capture("a_val", a)).unambiguous
+    an [AssertionError] should be thrownBy (Intersect(a, b)).unambiguous
+    an [AssertionError] should be thrownBy (Union(Concatenate(Complement(b), Capture("a_val", a)), b)).unambiguous
+  }
+
+  it should "find the ambiguous subexpression and a witness string in an ambiguous regex (default test case)" in {
     val a = Chars('a')
     val b = Chars('b')
     val r = a ~ (b | ε) ~ (b | ε)
     val (ambiguousSubexpr, witness) = r.unambiguous.value
-    ambiguousSubexpr should equal ((b | ε) ~ (b | ε))
+    ambiguousSubexpr shouldEqual (b | ε) ~ (b | ε)
     new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
   }
 
-  // more tests...
+  it should "prioritize the left subexpression in an ambiguous Concatenate regex with ambiguity in both subexpressions" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = Concatenate(Concatenate((b | ε), (b | ε)), (b | b.*))
 
-  it should "return None if the string is unambiguous" in {
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual Concatenate((b | ε), (b | ε))
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "prioritize the left subexpression in an ambiguous Union regex with ambiguity in both subexpressions" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = Union(Concatenate((b | ε), (b | ε)), (b | b.*))
+
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual Concatenate((b | ε), (b | ε))
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "find the right subexpression in an ambiguous Union regex with ambiguity only in the right subexpression" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = Union(a, (b | b.*))
+
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual (b | b.*)
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "find the right subexpression in an ambiguous Concatenate regex with ambiguity only in the right subexpression" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = Concatenate(a, (b | b.*))
+
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual (b | b.*)
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "find the ambiguous subexpression and a witness string in an ambiguous KleeneStar of an unambiguous regex" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = KleeneStar(Union(b~b, b~b~b))
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual r
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "find the ambiguous subexpression and a witness string in an ambiguous KleeneStar of an ambiguous regex" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = KleeneStar(Union(b, b))
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual Union(b, b)
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "find the ambiguous subexpression and a witness string in an ambiguous KleeneStar of a nullable regex" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = KleeneStar(Union(b, ε))
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual KleeneStar(Union(b, ε))
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "find the ambiguous subexpression and a witness string in a complex ambiguous regex" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val d_z_set = Chars('d' -> 'z')
+    val r = KleeneStar(Concatenate(Union(a, d_z_set), Union(b, b)))
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual Union(b, b)
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
+  it should "return None if the regex is unambiguous (default test case)" in {
     val a = Chars('a')
     val b = Chars('b')
     val r = a ~ (b | ε)
     r.unambiguous shouldEqual None
   }
 
-  // more tests...
+  it should "return None if the base regex is unambiguous" in {
+    val a = Chars('a')
+    ∅.unambiguous shouldEqual None
+    ε.unambiguous shouldEqual None
+    a.unambiguous shouldEqual None
+  }
+
+  it should "return None if the Concatenate regex is unambiguous" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = Concatenate(a, b)
+    r.unambiguous shouldEqual None
+  }
+
+  it should "return None if the Union regex is unambiguous" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = Union(a, b)
+    r.unambiguous shouldEqual None
+  }
+
+  it should "return None if the KleeneStar regex is unambiguous" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = KleeneStar(Union(a, b))
+    r.unambiguous shouldEqual None
+  }
+
+  it should "return None if the complex regex is unambiguous" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val c = Chars('c')
+    val d_z_set = Chars('d' -> 'z')
+    val r = KleeneStar(Concatenate(Union(c, d_z_set), Union(a, b)))
+    r.unambiguous shouldEqual None
+  }
+
 }

@@ -30,10 +30,9 @@ case class Dfa[State](delta: Transitions[State], init: State, fin: Set[State]) {
       val (prefix, state) = todo.head
       if (visited.contains(state)) return bfs(visited, todo.tail)
       if (fin.contains(state)) return Some(prefix)
-      val next_states = delta(state).map { case (charset, next_state) =>  (prefix + charset.minElement.get, next_state) }
+      val next_states = delta(state).map { case (charset, next_state) => (prefix + charset.minElement.get, next_state) }
       bfs(visited ++ Set(state), todo.tail ++ next_states)
     }
-
     bfs(Set[State](), Set(("", init)))
   }
 
