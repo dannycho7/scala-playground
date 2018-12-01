@@ -399,6 +399,13 @@ class RegexSpec extends FlatSpec with Matchers with OptionValues {
     new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
   }
 
+  it should "find the ambiguous subexpression and a witness string in an ambiguous KleeneStar of the empty string regex" in {
+    val r = KleeneStar(ε)
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+    ambiguousSubexpr shouldEqual KleeneStar(ε)
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
   it should "return None if the regex is unambiguous (default test case)" in {
     val a = Chars('a')
     val b = Chars('b')

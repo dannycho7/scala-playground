@@ -311,6 +311,7 @@ object `package` {
         val unambiguous_r = r.unambiguous
         val overlap_re = (r overlap re)
         if (unambiguous_r != None) unambiguous_r
+        else if (r.nullable == ε) Some((re, DerivativeAnalysis.analyze(re).getString.get))
         else if (r.nullable == ∅ && overlap_re.empty) None
         else Some((re, DerivativeAnalysis.analyze(overlap_re).getString.get))
       }
