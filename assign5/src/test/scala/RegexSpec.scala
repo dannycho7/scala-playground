@@ -442,4 +442,44 @@ class RegexSpec extends FlatSpec with Matchers with OptionValues {
     val r = KleeneStar(Concatenate(Union(c, d_z_set), Union(a, b)))
     r.unambiguous shouldEqual None
   }
+
+  it should "find the ambiguous subexpression and a witness string in an ambiguous regex (6 cases)" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r1 = Union(a, Union(b.*, b)) // Just re1 fails
+    val r2 = Union(Union(b.*, b), a) // Just re2 fails
+    val r3 = Union(Union(a, b), Union(a, b)) // Just intersect fails
+    val r4 = Union(Union(a.*, a), Union(b.*, b)) // Both re1 and re2 should return re1
+    val r5 = Union(a, Union(b.*, Union(b, a))) // re2 and intersect fails should return re2
+    val r6 = Union(Union(b.*, Union(b, a)), a) // re1 and intersect fails should return re1
+    val r7 = Union(Union(b.*, Union(b, a)), Union(a.*, Union(a, b))) // all if statements fail
+
+    val (ambiguousSubexpr1, witness1) = r1.unambiguous.value
+    ambiguousSubexpr1 shouldEqual Union(b.*, b)
+    new DerivativeMachine(ambiguousSubexpr1).eval(witness1) shouldEqual true
+
+    val (ambiguousSubexpr2, witness2) = r2.unambiguous.value
+    ambiguousSubexpr2 shouldEqual Union(b.*, b)
+    new DerivativeMachine(ambiguousSubexpr2).eval(witness2) shouldEqual true
+
+    val (ambiguousSubexpr3, witness3) = r3.unambiguous.value
+    ambiguousSubexpr3 shouldEqual Union(Union(a, b), Union(a, b)) 
+    new DerivativeMachine(ambiguousSubexpr3).eval(witness3) shouldEqual true
+
+    val (ambiguousSubexpr4, witness4) = r4.unambiguous.value
+    ambiguousSubexpr4 shouldEqual Union(a.*, a)
+    new DerivativeMachine(ambiguousSubexpr4).eval(witness4) shouldEqual true
+
+    val (ambiguousSubexpr5, witness5) = r5.unambiguous.value
+    ambiguousSubexpr5 shouldEqual Union(b.*, Union(b, a))
+    new DerivativeMachine(ambiguousSubexpr5).eval(witness5) shouldEqual true
+
+    val (ambiguousSubexpr6, witness6) = r6.unambiguous.value
+    ambiguousSubexpr6 shouldEqual Union(b.*, Union(b, a))
+    new DerivativeMachine(ambiguousSubexpr6).eval(witness6) shouldEqual true
+
+    val (ambiguousSubexpr7, witness7) = r7.unambiguous.value
+    ambiguousSubexpr7 shouldEqual Union(b.*, Union(b, a))
+    new DerivativeMachine(ambiguousSubexpr7).eval(witness7) shouldEqual true
+  }
 }
