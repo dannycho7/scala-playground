@@ -332,6 +332,16 @@ class RegexSpec extends FlatSpec with Matchers with OptionValues {
     new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
   }
 
+  it should "find the nested right ambiguous subexpression in an ambiguous Concatenate regex with the ambiguity two levels deep" in {
+    val a = Chars('a')
+    val b = Chars('b')
+    val r = Concatenate(Union(b, ε), Concatenate(Union(b, ε), Union(b, b.*)))
+    val (ambiguousSubexpr, witness) = r.unambiguous.value
+
+    ambiguousSubexpr should equal (b | b.*)
+    new DerivativeMachine(ambiguousSubexpr).eval(witness) shouldEqual true
+  }
+
   it should "find the right subexpression in an ambiguous Union regex with ambiguity only in the right subexpression" in {
     val a = Chars('a')
     val b = Chars('b')
@@ -432,5 +442,4 @@ class RegexSpec extends FlatSpec with Matchers with OptionValues {
     val r = KleeneStar(Concatenate(Union(c, d_z_set), Union(a, b)))
     r.unambiguous shouldEqual None
   }
-
 }

@@ -131,4 +131,12 @@ class DfaSpec extends FlatSpec with Matchers with OptionValues {
     val s = dfa.getString.value
     dfa matches s shouldEqual true
   }
+
+  it should "return a string that the looping non-empty DFA recognizes if the DFA's language is not empty 11" in {
+    val a = Chars('a')
+    val δ = Map(∅ -> Seq(!CharSet('a') -> ∅, CharSet('a') -> a), a -> Seq(!CharSet() -> a))
+    val dfa = Dfa(δ, ∅, Set(a))
+    val s = dfa.getString.value
+    dfa matches s shouldEqual true
+  }
 }
